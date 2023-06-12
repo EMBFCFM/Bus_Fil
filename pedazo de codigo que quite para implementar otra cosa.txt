@@ -1,0 +1,140 @@
+"""
+    def display_columns(self):
+        Application.comparar_columnas(self)
+
+        ##Codigo para mostrar archivos individualmente
+
+# Create a new window
+        self.column_window = tk.Toplevel(self)
+        self.column_window.title("Seleccione las columnas deseadas")
+        self.column_window.geometry("500x500")  # Set the size of the window
+
+        # Delete files when window is closed
+        self.column_window.protocol("WM_DELETE_WINDOW", self.on_closing_column_window)
+
+        # Create a canvas and a scrollbar
+        canvas_frame = tk.Frame(self.column_window)
+        canvas_frame.pack(fill="both", expand=True)
+        canvas = tk.Canvas(canvas_frame)
+        scrollbar = tk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Create a frame to hold the checkboxes
+        checkbox_frame = tk.Frame(canvas)
+        checkbox_frame_id = canvas.create_window((0,0), window=checkbox_frame, anchor="w")
+
+        # Bind the frame to the canvas scroll
+        def configure_scroll_region(e):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        checkbox_frame.bind("<Configure>", configure_scroll_region)
+
+        # Bind the frame to the canvas size
+        def configure_window_size(e):
+            canvas.itemconfig(checkbox_frame_id, width=e.width)
+        canvas.bind("<Configure>", configure_window_size)
+
+        # Bind mouse wheel to the canvas
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Read all .xlsx files in the processing_files folder
+        for filename in os.listdir("processing_files"): #--->
+            if filename.endswith(".xlsx"):
+                df = pd.read_excel(os.path.join("processing_files", filename))
+
+                # Create a label for each file
+                file_label = tk.Label(checkbox_frame, text=f"Archivo es: {filename}")  ##aqui comienza a crear los
+                file_label.pack()
+
+                # Create a checkbox for each column in the file
+                self.column_checkboxes[filename] = []
+                for column in df.columns:
+                    var = tk.IntVar()
+                    cb = tk.Checkbutton(checkbox_frame, text=column, variable=var)
+                    cb.pack()
+                    self.column_checkboxes[filename].append((column, var))
+        
+        # Create a save button to save the selected columns
+        self.btn_save = tk.Button(self.column_window, text="Guardar", command=self.save_columns)
+        self.btn_save.pack(pady=20)
+
+        self.btn_help_columns = tk.Button(self.column_window, text="Ayuda", command=self.show_columns_help)
+        self.btn_help_columns.pack(pady=20)
+
+    def show_columns_help(self):
+        messagebox.showinfo("Ayuda", "Esta pantalla muestra todas las columnas de los archivos .xlsx generados.\n\n" \
+                       "Seleccione las casillas de verificación de las columnas que desea conservar y luego haga clic en 'Guardar'.\n\n" \
+                       "Se le preguntará si desea renombrar las columnas antes de guardarlas en un nuevo archivo.xlsx.\n\nEn ambos casos "\
+                       "tendras que especificar el nombre y el lugar en el se guardara el excel")
+
+    def on_closing_column_window(self):
+        self.clean_up()
+        self.column_window.destroy()  # Close the window
+
+
+    def save_columns(self):
+        # Create a new DataFrame to store the selected columns
+        self.df_selected = pd.DataFrame()
+
+        # Create a counter for duplicate column names
+        column_counter = {}
+
+        # Loop over all files
+        for filename in self.column_checkboxes:
+            # Read the excel file
+            df = pd.read_excel(os.path.join("processing_files", filename))
+
+            # Loop over all checkboxes for the current file
+            for column, var in self.column_checkboxes[filename]:
+                if var.get() == 1:  # if the checkbox is checked
+                    # Check if the column name is already in the DataFrame
+                    if column in self.df_selected.columns:
+                        # If it is, increment the counter for this column name
+                        column_counter[column] = column_counter.get(column, 0) + 1 #Quite esto para evitar el contador
+                        # Add the counter to the column name
+                        new_column_name = f"{column}_{column_counter[column]}"
+                    else:
+                        # If it's not, keep the original column name
+                        new_column_name = column
+                    # Add the selected column to the new DataFrame with the new name
+                    self.df_selected[new_column_name] = df[column]
+
+        # Ask the user if they want to rename the columns
+        rename_columns = messagebox.askyesno("Renombrar columnas", "¿Desea modificar el nombre de las columnas?")
+        if rename_columns:
+            self.rename_columns()
+        else:
+            self.save_file(self.df_selected)
+"""
+        
+"""
+    def rename_columns(self):
+        self.rename_window = tk.Toplevel(self)
+        self.rename_window.title("Renombrar columnas")
+        self.rename_window.geometry("500x500")
+
+        self.entries = {}
+
+        for column in self.df_selected.columns:
+            frame = tk.Frame(self.rename_window)
+            frame.pack()
+
+            label = tk.Label(frame, text=column)
+            label.pack(side="left")
+
+            entry = tk.Entry(frame)
+            entry.pack(side="left")
+            self.entries[column] = entry
+
+        btn_save = tk.Button(self.rename_window, text="Crear archivo", command=self.create_file)
+        btn_save.pack(pady=20)
+    
+        self.btn_help_rename = tk.Button(self.rename_window, text="Ayuda", command=self.show_rename_help)
+        self.btn_help_rename.pack(pady=20)
+"""
+    
+    """"""
