@@ -9,19 +9,36 @@ from scripts.alumnosInscritosConEmail import format5
 from scripts.alumosPorNivel import format6
 import os
 import pandas as pd
-import time
 
 
 class Application(tk.Tk):
     def __init__(self):
+
         self.archivos_excel = []
         self.columnas_comunes = []
         self.columnas_distintas = []
         self.columnas_seleccionadas = []
 
+        tk.Tk.__init__(self)
+        self.title("Archivos txt")
+        self.geometry("600x200")
+        Label(self,text="Selecciona un archivo .txt").pack(pady=20, side= TOP, anchor="w")
 
-    def close_window(self):
-        self.destroy()
+        self.btn_cargar = tk.Button(self, text="Archivos txt a Analizar",command=self.open_files)
+        self.btn_cargar.pack(pady=20)
+
+        self.btn_help_main = tk.Button(self, text="Ayuda",command=self.show_main_help)
+        self.btn_help_main.pack(pady=20)
+
+        # Delete files when window is closed
+        #self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # Dictionary to store column checkboxes
+        self.column_checkboxes = {}
+
+        # Initialize rename_window to None
+        self.rename_window = None
+
 
     def show_main_help(self):
         messagebox.showinfo("Ayuda", "Esta aplicación permite procesar y seleccionar columnas específicas de archivos .txt.\n\n" \
@@ -29,12 +46,10 @@ class Application(tk.Tk):
                        "A continuación, se abrirá una ventana con todas las columnas de los archivos .xlsx generados, donde podrá seleccionar " \
                        "las columnas que desea conservar.\n\nFinalmente, podrá optar por renombrar las columnas seleccionadas antes de guardarlas " \
                        "en un nuevo archivo .xlsx.")
-
+        
     def on_closing(self):
-        self.clean_up()
-        self.destroy()  # Close the window
-
-  
+            self.clean_up()
+            self.destroy()  # Close the window
 
     def open_files(self):
         file_paths = filedialog.askopenfilenames(filetypes=[('Text Files', '*.txt')])
@@ -43,41 +58,57 @@ class Application(tk.Tk):
                 print(f"Archivo seleccionado: {file_path}")
                 self.process_file(file_path)
             messagebox.showinfo("Archivos cargados", "Los archivos se cargaron exitosamente.")
-            self.comparar_columnas()
         else:
             messagebox.showwarning("Archivos no seleccionados", "No se seleccionaron archivos.")
+        
+        self.comparar_columnas()
+        #self.display_columns()
 
-
-
-    def process_file(self, file_path):
-        # process file here (your functions)
-        format1(file_path)
-        format2(file_path)
-        format3(file_path)
-        format4(file_path)
-        format5(file_path)
-        format6(file_path)
-
-    def comparar_columnas(self):  ##Funcion para pedirle al usuario que elija al menos 2 archivos para empezar
+    def comparar_columnas(self):
         if len(os.listdir("processing_files")) < 2:
             messagebox.showwarning("Archivos insuficientes", "Debe cargar al menos 2 archivos para comparar.")
             return
-        columnas_archivo_1 = set(self.archivos_excel[0].columns)
+        else:
+            print(f'Estos son los archivos creados: {os.listdir("processing_files")}')
+        
+        dfs = []
+        columnas = set()
+
+        for filename in os.listdir("processing_files"):
+            try:
+                df = pd.read_excel(os.path.join("processing_files", filename))
+                dfs.append(df)
+                columnas.add(tuple(df.columns))
+            except Exception as e:
+                print(f"Error al leer el archivo {archivo}: {str(e)}")
+
+        if len(columnas) == 1:
+            print("Todos los archivos tienen las mismas columnas:")
+            print(columnas.pop())
+        else:
+            print("Los archivos no tienen las mismas columnas.")
+           
+        ##A partir de aqui se debera de implementar los demas procesos
+            if filename.endswith(".xlsx"):
+                df = pd.read_excel(os.path.join("processing_files", filename))
+
+        columnas_archivos_1 = set(pd.read_excelself.archivos_excel().columns)
         columnas_iguales = True
 
         for archivo in self.archivos_excel[1:]:
-            if set(archivo.columns) != columnas_archivo_1:
+            if set(archivo.columns) != list(columnas_archivos_1):
                 columnas_iguales = False
                 break
 
         if columnas_iguales:
-            self.columnas_comunes = list(columnas_archivo_1)
+            self.columnas_comunes = list(columnas_archivos_1)
             self.mostrar_seleccion_columnas_comunes()
         else:
             self.columnas_distintas = [set(archivo.columns) for archivo in self.archivos_excel]
             self.mostrar_seleccion_columnas_distintas()
 
-    def mostrar_seleccion_columnas_comunes(self): ##Funcion para mostrar las columnas comunes
+
+    def mostrar_seleccion_columnas_comunes(self):
         if not self.columnas_comunes:
             return
 
@@ -100,13 +131,7 @@ class Application(tk.Tk):
         boton_guardar = tk.Button(ventana_seleccion, text="Guardar", command=lambda: self.guardar_columnas(seleccion))
         boton_guardar.pack()
 
-        self.btn_help_columns = tk.Button(self.column_window, text="Ayuda", command=self.show_columns_help)
-        self.btn_help_columns.pack()
-
-
-
-
-    def mostrar_seleccion_columnas_distintas(self): ##Funcion para mostrar columnas distintas
+    def mostrar_seleccion_columnas_distintas(self):
             if not self.columnas_distintas:
                 return
 
@@ -144,20 +169,20 @@ class Application(tk.Tk):
             boton_guardar.pack()
 
     def guardar_columnas(self, columnas_seleccionadas):
-        if not columnas_seleccionadas:
-            messagebox.showwarning("Columnas no seleccionadas", "No se seleccionaron columnas para guardar.")
-            return
+            if not columnas_seleccionadas:
+                messagebox.showwarning("Columnas no seleccionadas", "No se seleccionaron columnas para guardar.")
+                return
 
-        archivo_seleccionado = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".xlsx")
-        if archivo_seleccionado:
-            df_nuevo_excel = pd.DataFrame()
+            archivo_seleccionado = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".xlsx")
+            if archivo_seleccionado:
+                df_nuevo_excel = pd.DataFrame()
 
-            for archivo in self.archivos_excel:
-                df_nuevo_excel = pd.concat([df_nuevo_excel, archivo[columnas_seleccionadas]], axis=1)
+                for archivo in self.archivos_excel:
+                    df_nuevo_excel = pd.concat([df_nuevo_excel, archivo[columnas_seleccionadas]], axis=1)
 
-            df_nuevo_excel.to_excel(archivo_seleccionado, index=False)
-            messagebox.showinfo("Guardado", "El archivo se guardó exitosamente.")
-            self.reset()
+                df_nuevo_excel.to_excel(archivo_seleccionado, index=False)
+                messagebox.showinfo("Guardado", "El archivo se guardó exitosamente.")
+                self.reset()
 
     def guardar_columnas_distintas(self):
         archivo_seleccionado = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".xlsx")
@@ -172,77 +197,24 @@ class Application(tk.Tk):
             messagebox.showinfo("Guardado", "El archivo se guardó exitosamente.")
             self.reset()
 
-    def show_rename_help(self):
-            messagebox.showinfo("Ayuda", "Esta pantalla le permite renombrar las columnas seleccionadas. " \
-                        "Ingrese los nuevos nombres de las columnas en los cuadros de entrada y luego haga clic en 'Crear archivo' para " \
-                        "guardar las columnas seleccionadas en un nuevo archivo .xlsx con los nombres de las columnas actualizados.Puedes dejar \
-                            en blanco las columnas a las que no deseas cambiarles el nombre, el programa tomara el nombre original por defecto")
+    def reset(self):
+            self.archivos_excel = []
+            self.columnas_comunes = []
+            self.columnas_distintas = []
+            self.columnas_seleccionadas = []            
 
-    def create_file(self):
-        for column, entry in self.entries.items():
-            new_name = entry.get()
-            if new_name:
-                self.df_selected = self.df_selected.rename(columns={column: new_name})
+    def process_file(self, file_path):
+        df = pd.read_csv(file_path,delimiter='\t')
+        # process file here (your functions)
+        self.archivos_excel.append(file_path)
+        format1(file_path)
+        format2(file_path)
+        format3(file_path)
+        format4(file_path)
+        format5(file_path)
+        format6(file_path)
 
-        # Save the new DataFrame to a new excel file
-        self.save_file(self.df_selected)
-
-    def save_file(self, dataframe):
-        # Let the user choose the location and name of the output file
-        file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-        if not file_path:
-            return
-
-        # Save the new DataFrame to the chosen file
-        dataframe.to_excel(file_path, index=False)
-        print(f"Las columnas seleccionadas se han guardado con éxito en '{file_path}'.")
-
-        self.clean_up()
-
-        if self.rename_window:
-            self.rename_window.destroy()
-            self.rename_window = None
-
-        # Close the columns window
-        self.column_window.destroy()
-
-        # Show a message box to inform the user that the process is done
-        messagebox.showinfo("Proceso terminado", f"El archivo '{file_path}' ha sido creado con éxito.")
-        
-    def clean_up(self):
-        # Delete all files in the processing_files folder
-        for filename in os.listdir("processing_files"):
-            processing_file_path = os.path.join("processing_files", filename)
-            try:
-                if os.path.isfile(processing_file_path):
-                    os.unlink(processing_file_path)
-            except Exception as e:
-                print(f"Error al eliminar el archivo {processing_file_path}: {e}")
-
-        # Delete all references in column_checkboxes
-        self.column_checkboxes = {}
 
 if __name__ == "__main__":
-
-    ventana_principal = tk.Tk()
-    ventana_principal.title("Comparador de archivos Excel")
-    ventana_principal.geometry("600x200")
-
-    Label(ventana_principal,text="Selecciona un archivo .txt").pack(pady=20, side= TOP, anchor="w")
-    Label(ventana_principal, text= "Dudas").pack(pady=20, side= TOP, anchor="w")
-
     app = Application()
-
-    def cargar_archivos():
-        app.open_files()
-
-    def comparar_columnas():
-        app.comparar_columnas()
-
-    boton_cargar = tk.Button(ventana_principal, text="Cargar archivos", command=cargar_archivos)
-    boton_cargar.pack()
-
-    boton_comparar = tk.Button(ventana_principal, text="Comparar columnas", command=comparar_columnas)
-    boton_comparar.pack()
-
-    ventana_principal.mainloop()
+    mainloop()
