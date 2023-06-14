@@ -80,32 +80,40 @@ class Application(tk.Tk):
                 dfs.append(df)
                 columnas.add(tuple(df.columns))
             except Exception as e:
-                print(f"Error al leer el archivo {archivo}: {str(e)}")
+                print(f"Error al leer el archivo {filename}: {str(e)}")
 
         if len(columnas) == 1:
             print("Todos los archivos tienen las mismas columnas:")
             print(columnas.pop())
+            print("Hola")
+
+            self.columnas_comunes = list(df.columns)
+            print(self.columnas_comunes)
+            self.mostrar_seleccion_columnas_comunes()
+            
         else:
             print("Los archivos no tienen las mismas columnas.")
-           
-        ##A partir de aqui se debera de implementar los demas procesos
-            if filename.endswith(".xlsx"):
-                df = pd.read_excel(os.path.join("processing_files", filename))
-
-        columnas_archivos_1 = set(pd.read_excelself.archivos_excel().columns)
-        columnas_iguales = True
-
-        for archivo in self.archivos_excel[1:]:
-            if set(archivo.columns) != list(columnas_archivos_1):
-                columnas_iguales = False
-                break
-
-        if columnas_iguales:
-            self.columnas_comunes = list(columnas_archivos_1)
-            self.mostrar_seleccion_columnas_comunes()
-        else:
-            self.columnas_distintas = [set(archivo.columns) for archivo in self.archivos_excel]
+            self.columnas_distintas = [set(columnas) for columnas in os.listdir("processing_files")]
             self.mostrar_seleccion_columnas_distintas()
+            print("funciona")
+        ##A partir de aqui se debera de implementar los demas procesos
+            #if filename.endswith(".xlsx"):
+             #   df = pd.read_excel(os.path.join("processing_files", filename))
+
+        #columnas_archivos_1 = set(pd.read_excelself.archivos_excel().columns)
+        #columnas_iguales = True
+
+        #for archivo in self.archivos_excel[1:]:
+         #   if set(archivo.columns) != list(columnas_archivos_1):
+          #      columnas_iguales = False
+           #     break
+
+       # if columnas_iguales:
+        #    self.columnas_comunes = list(columnas_archivos_1)
+         #   self.mostrar_seleccion_columnas_comunes()
+        #else:
+         #   self.columnas_distintas = [set(archivo.columns) for archivo in self.archivos_excel]
+          #  self.mostrar_seleccion_columnas_distintas()
 
 
     def mostrar_seleccion_columnas_comunes(self):
@@ -130,6 +138,7 @@ class Application(tk.Tk):
 
         boton_guardar = tk.Button(ventana_seleccion, text="Guardar", command=lambda: self.guardar_columnas(seleccion))
         boton_guardar.pack()
+        
 
     def mostrar_seleccion_columnas_distintas(self):
             if not self.columnas_distintas:
@@ -172,13 +181,14 @@ class Application(tk.Tk):
             if not columnas_seleccionadas:
                 messagebox.showwarning("Columnas no seleccionadas", "No se seleccionaron columnas para guardar.")
                 return
-
+        
             archivo_seleccionado = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".xlsx")
             if archivo_seleccionado:
                 df_nuevo_excel = pd.DataFrame()
 
                 for archivo in self.archivos_excel:
-                    df_nuevo_excel = pd.concat([df_nuevo_excel, archivo[columnas_seleccionadas]], axis=1)
+                    df_seleccionado = archivo.loc[:,columnas_seleccionadas]
+                    df_nuevo_excel = pd.concat([df_nuevo_excel, df_seleccionado], axis=1)
 
                 df_nuevo_excel.to_excel(archivo_seleccionado, index=False)
                 messagebox.showinfo("Guardado", "El archivo se guardó exitosamente.")
